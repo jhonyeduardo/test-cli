@@ -93,13 +93,12 @@ The *new* command initialize a project to you start your development more quickl
 thf new <projectName> --template <template>
 ```
 
-All templates have the configured THF, the templates that you can start are:
+All templates have the THF configured, the templates that you can start are:
 
 Template | Description
 --- | ---
-*blank* | Creates a simple project.
+*blank* | Creates a simple project with THFModule and THF css configured.
 *sidemenu* | Creates a project containing the menu and modules using lazy loading to start development.
-*sample* | Creates a project that uses several THF components, and can be used to start the development of your project or to retrieve examples.
 
 If you don't inform the template the default is `sidemenu`.
 
