@@ -1,6 +1,6 @@
 # THF CLI
 
-The THF CLI is a command-line interface tool that you use to initialize and develop Angular applications.
+The THF CLI is a command-line interface tool that you use to initialize and develop Angular applications with THF already configured.
 You can use the tool directly in a command shell.
 
 ## Installation
