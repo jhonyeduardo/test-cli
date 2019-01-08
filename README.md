@@ -100,7 +100,7 @@ Template | Description
 *blank* | Creates a simple project with THFModule and THF css configured.
 *sidemenu* | Creates a project containing the menu and modules using lazy loading to start development.
 
-If you don't inform the template the default is `sidemenu`.
+If you don't inform the template default is `sidemenu`.
 
 ![New Command](https://media.giphy.com/media/2A3FtMzAVfGQArw5i5/giphy.gif)
 
