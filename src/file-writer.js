@@ -1,19 +1,26 @@
-const fs = require('fs'),
-  getDirName = require('path').dirname,
-  mkdirp = require('mkdirp'),
-  chalk = require('chalk'),
-  handlebars = require('handlebars');
+const fs = require('fs');
+const getDirName = require('path').dirname;
+const mkdirp = require('mkdirp');
+const chalk = require('chalk');
+const generate = require('./generate');
 
-const fileWriter = {
+class FileWriter {
 
-  writeFile: function (path, content, cb) {
+  constructor() {
+    this.moduleName = '';
+    this.fileName = '';
+    this.filePath = '';
+  }
+  
+  writeFile(path, content, cb) {
     try {
+
       mkdirp(getDirName(path), function (err) {
         if (err) return cb(err);
 
         fs.writeFile(path, content, result => {
           if (result) {
-            console.error(`error: `);
+            console.error(`Error on write file`);
             return;
           }
     
@@ -22,122 +29,59 @@ const fileWriter = {
       });
 
     } catch (e) {
-      console.log(chalk.green.bold('ERROU'), fullpath);
+      console.log(chalk.red.bold('ERROR'), fullpath, e);
     }
+  }
 
-  },
-  generateDocumentationRoutingModule: function (destination, fileName, moduleName, component) {
+  config(newModuleName) {
+    this.fileName = _getFileName(newModuleName);
+    this.moduleName = _getModuleName(this.fileName);
 
-    const routingModuleSource = `import { NgModule } from '@angular/core';
-import { Routes, RouterModule } from '@angular/router';
+    const destination = _getDestination(this.fileName);
 
-import { {{moduleName}}Component } from './{{fileName}}.component';
+    this.filePath = `${destination}/${this.fileName}`;
+  }
 
-export const {{routesName}}: Routes = [
-  { path: '', component: {{moduleName}}Component }
-];
+  createRoutingModule(componentSelected) {
+    const routingModuleSource = generate.routingModuleSource(this.fileName, this.moduleName, componentSelected);
 
-@NgModule({
-  imports: [
-    RouterModule.forChild({{routesName}})
-  ],
-  exports: [
-    RouterModule
-  ]
-})
-export class {{moduleName}}RoutingModule { }
-`;
+    this.writeFile(`${this.filePath}-routing.module.ts`, routingModuleSource)
+  }
 
-    const routingModuleTemplate = handlebars.compile(routingModuleSource);
-    let routingModuleContent = routingModuleTemplate({
-      routesName: `${moduleName.toLowerCase()}Routes`,
-      component,
-      moduleName,
-      fileName
-    });
+  createTemplateFile (componentSelected) {
+    const htmlSource = generate.htmlSource(this.moduleName, componentSelected);
 
-    const fullpath = `${destination}/${fileName}-routing.module.ts`;
+    this.writeFile(`${this.filePath}.component.html`, htmlSource);
+  }
 
-    this.writeFile(fullpath, routingModuleContent)
-  },
-  generateTemplateFile: function (destination, fileName, moduleName, component) {
-    const componentTag = generateComponentTag(component);
-    const htmlSource = `<{{componentTag}} t-title="{{title}}" [t-service-api]="service">
-</{{componentTag}}>
-`;
+  createComponentFile(serviceSelected) {
+    const componentSource = generate.componentSource(this.fileName, this.moduleName, serviceSelected)
 
-    const htmlTemplate = handlebars.compile(htmlSource);
+    this.writeFile(`${this.filePath}.component.ts`, componentSource);
+  }
 
-    let htmlContent = htmlTemplate({
-      title: moduleName,
-      componentTag
-    });
+  createModuleFile(componentSelected) {
+    const moduleSource = generate.moduleSource(this.fileName, this.moduleName, componentSelected);
 
-    const fullpath = `${destination}/${fileName}.component.html`;
-
-    this.writeFile(fullpath, htmlContent);
-  },
-  generateComponentFile: function (destination, fileName, moduleName, service) {
-    const componentSource = `import { Component } from '@angular/core';
-
-@Component({
-  selector: 'app-{{name}}',
-  templateUrl: './{{name}}.component.html'
-})
-export class {{component}}Component {
-
-  service = '{{service}}';
-
-}
-`;
-    const componentTemplate = handlebars.compile(componentSource);
-    let componentContent = componentTemplate({
-      name: fileName,
-      component: moduleName,
-      service
-    });
-
-    const fullpath = `${destination}/${fileName}.component.ts`;
-
-    this.writeFile(fullpath, componentContent);
-  },
-  generateModuleFile: function (destination, fileName, moduleName, component) {
-    const moduleSource = `import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
-
-import { {{component}}Module } from '@totvs/thf-templates';
-
-import { {{moduleName}}RoutingModule } from './{{fileName}}-routing.module';
-import { {{moduleName}}Component } from './{{fileName}}.component';
-
-@NgModule({
-  imports: [
-    CommonModule,
-
-    {{moduleName}}RoutingModule,
-    {{component}}Module
-  ],
-  declarations: [
-    {{moduleName}}Component
-  ],
-  providers: []
-})
-export class {{moduleName}}Module { }
-`;
-
-    const moduleTemplate = handlebars.compile(moduleSource);
-    let moduleContent = moduleTemplate({ moduleName, component, fileName });
-
-    const fullpath = `${destination}/${fileName}.module.ts`;
-
-    this.writeFile(fullpath, moduleContent);
-  },
+    this.writeFile(`${this.filePath}.module.ts`, moduleSource);
+  }
 
 };
 
-function generateComponentTag(component) {
-  return component.split(/(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/).map(v => v.toLowerCase()).join('-');
+function _getFileName(moduleName) {
+  return moduleName.split(/(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/).map(v => v.toLowerCase()).join('-');
 }
 
+function _getModuleName(fileName) {
+  return fileName.split('-').map(v => v.charAt(0).toUpperCase() + v.substr(1)).join('');
+}
 
-module.exports = fileWriter;
+// TODO: check has a relative path
+function _getDestination(folderName) {
+  let currentFolder = process.cwd();
+  currentFolder = currentFolder.replace(/\\/g, '/');
+
+  return `${currentFolder}/src/app/${folderName}`;
+}
+
+module.exports = new FileWriter();
